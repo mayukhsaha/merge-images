@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Merge Mutiple Images and PDFs to single PDF</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.228/pdf_viewer.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.228/pdf.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.228/pdf_viewer.js"></script>
+    <style>
+        #pdf-viewer {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            overflow: auto;
+        }
+
+        .pdf-page-canvas {
+            display: block;
+            margin: 5px auto;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+          width: 100% !important;
+        }
+
+        table,
+        td {
+          width: 33.3%;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        input[type="radio"] {
+            margin-left: 10px;
+        }
+
+        @media print {
+          table * {
+            display: none;
+          }
+        }
+    </style>
+</head>
+
+<body class="body">
+    <table>
+        <tr>
+            <td>
+                File Type:
+                <input type="radio" name="fileType" value="image" checked="checked">Image
+                <input type="radio" name="fileType" value="pdf">PDF
+            </td>
+            <td>
+                Browse File:
+                <input type="file" id="fileImport" value="Browse"/>
+            </td>
+            <td>
+                <input type="button" style="width:100%" id="printButton" value="Print"/>
+            </td>
+        </tr>
+    </table>
+</body>
+<script type="text/javascript">
+    $(document).on("change", "#fileImport", function(event) {
+        var filePath = URL.createObjectURL(event.target.files[0]);
+        var fileType = $("input[name='fileType']:checked").val();
+        if (fileType == "pdf") {
+            displayPDF(filePath);
+        } else {
+            var input = $(document.createElement("img"));
+            input.attr("width", "100%");
+            input.attr("class", "images");
+            input.attr("src", filePath);
+            $(".body").append(input);
+        }
+    });
+
+    $(document).on("click", "#printButton", function(event) {
+      window.print();
+    });
+</script>
+<script>
+    var generateUUID = function () {
+        var d = new Date().getTime();
+        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+            d += performance.now();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = (d + Math.random() * 16) % 16 | 0;
+            d = Math.floor(d / 16);
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
+    var displayPDF = function(url) {
+        var thePdf = null;
+        var scale = 1;
+        pdfjsLib.getDocument(url).promise.then(function(pdf) {
+            thePdf = pdf;
+
+            var viewerId = generateUUID();
+            var input = $(document.createElement("div"));
+            input.attr("id", viewerId);
+            $(".body").append(input);
+
+            var viewer = document.getElementById(viewerId);
+
+            for (page = 1; page <= pdf.numPages; page++) {
+                canvas = document.createElement("canvas");
+                canvas.className = 'pdf-page-canvas';
+                viewer.appendChild(canvas);
+                renderPage(thePdf, scale, page, canvas);
+            }
+        });
+    };
+
+    var renderPage = function (thePdf, scale, pageNumber, canvas) {
+        thePdf.getPage(pageNumber).then(function(page) {
+            viewport = page.getViewport(scale);
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            page.render({
+                canvasContext: canvas.getContext('2d'),
+                viewport: viewport
+            });
+        });
+    };
+</script>
+
+</html>
