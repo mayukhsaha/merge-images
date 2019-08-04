@@ -47,8 +47,75 @@
           }
         }
     </style>
-</head>
+    <script type="text/javascript">
+        var pageBreakHtml = "<div>&nbsp;</div>";
+        $(document).on("change", "#fileImport", function(event) {
+            var filePath = URL.createObjectURL(event.target.files[0]);
+            var fileType = $("input[name='fileType']:checked").val();
+            if (fileType == "pdf") {
+                displayPDF(filePath);
+            } else {
+                var input = $(document.createElement("img"));
+                input.attr("width", "100%");
+                input.attr("style", "page-break-after: always;");
+                input.attr("class", "images");
+                input.attr("src", filePath);
+                $(".body").append(input);
+                $(".body").append(pageBreakHtml);
+            }
+        });
 
+        $(document).on("click", "#printButton", function(event) {
+          window.print();
+        });
+
+        var generateUUID = function () {
+            var d = new Date().getTime();
+            if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+                d += performance.now();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = (d + Math.random() * 16) % 16 | 0;
+                d = Math.floor(d / 16);
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+
+        var displayPDF = function(url) {
+            var thePdf = null;
+            var scale = 1;
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                thePdf = pdf;
+
+                var viewerId = generateUUID();
+                var input = $(document.createElement("div"));
+                input.attr("id", viewerId);
+                $(".body").append(input);
+
+                var viewer = document.getElementById(viewerId);
+
+                for (page = 1; page <= pdf.numPages; page++) {
+                    canvas = document.createElement("canvas");
+                    canvas.className = 'pdf-page-canvas';
+                    viewer.appendChild(canvas);
+                    renderPage(thePdf, scale, page, canvas);
+                }
+            });
+        };
+
+        var renderPage = function (thePdf, scale, pageNumber, canvas) {
+            thePdf.getPage(pageNumber).then(function(page) {
+                viewport = page.getViewport(scale);
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                page.render({
+                    canvasContext: canvas.getContext('2d'),
+                    viewport: viewport
+                });
+            });
+        };
+    </script>
+</head>
 <body class="body">
     <table>
         <tr>
@@ -67,71 +134,4 @@
         </tr>
     </table>
 </body>
-<script type="text/javascript">
-    $(document).on("change", "#fileImport", function(event) {
-        var filePath = URL.createObjectURL(event.target.files[0]);
-        var fileType = $("input[name='fileType']:checked").val();
-        if (fileType == "pdf") {
-            displayPDF(filePath);
-        } else {
-            var input = $(document.createElement("img"));
-            input.attr("width", "100%");
-            input.attr("class", "images");
-            input.attr("src", filePath);
-            $(".body").append(input);
-        }
-    });
-
-    $(document).on("click", "#printButton", function(event) {
-      window.print();
-    });
-</script>
-<script>
-    var generateUUID = function () {
-        var d = new Date().getTime();
-        if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
-            d += performance.now();
-        }
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = (d + Math.random() * 16) % 16 | 0;
-            d = Math.floor(d / 16);
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
-    }
-
-    var displayPDF = function(url) {
-        var thePdf = null;
-        var scale = 1;
-        pdfjsLib.getDocument(url).promise.then(function(pdf) {
-            thePdf = pdf;
-
-            var viewerId = generateUUID();
-            var input = $(document.createElement("div"));
-            input.attr("id", viewerId);
-            $(".body").append(input);
-
-            var viewer = document.getElementById(viewerId);
-
-            for (page = 1; page <= pdf.numPages; page++) {
-                canvas = document.createElement("canvas");
-                canvas.className = 'pdf-page-canvas';
-                viewer.appendChild(canvas);
-                renderPage(thePdf, scale, page, canvas);
-            }
-        });
-    };
-
-    var renderPage = function (thePdf, scale, pageNumber, canvas) {
-        thePdf.getPage(pageNumber).then(function(page) {
-            viewport = page.getViewport(scale);
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            page.render({
-                canvasContext: canvas.getContext('2d'),
-                viewport: viewport
-            });
-        });
-    };
-</script>
-
 </html>
