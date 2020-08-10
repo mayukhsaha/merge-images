@@ -50,18 +50,20 @@
     <script type="text/javascript">
         var pageBreakHtml = "<div>&nbsp;</div>";
         $(document).on("change", "#fileImport", function(event) {
-            var filePath = URL.createObjectURL(event.target.files[0]);
             var fileType = $("input[name='fileType']:checked").val();
-            if (fileType == "pdf") {
-                displayPDF(filePath);
-            } else {
-                var input = $(document.createElement("img"));
-                input.attr("width", "100%");
-                input.attr("style", "page-break-after: always;");
-                input.attr("class", "images");
-                input.attr("src", filePath);
-                $(".body").append(input);
-                $(".body").append(pageBreakHtml);
+            for(var eachIndex=0; eachIndex<event.target.files.length; eachIndex++) {
+                var filePath = URL.createObjectURL(event.target.files[eachIndex]);
+                if (fileType == "pdf") {
+                    displayPDF(filePath);
+                } else {
+                    var input = $(document.createElement("img"));
+                    input.attr("width", "100%");
+                    input.attr("style", "page-break-after: always;");
+                    input.attr("class", "images");
+                    input.attr("src", filePath);
+                    $(".body").append(input);
+                    $(".body").append(pageBreakHtml);
+                }
             }
         });
 
@@ -126,7 +128,7 @@
             </td>
             <td>
                 Browse File:
-                <input type="file" id="fileImport" value="Browse"/>
+                <input type="file" id="fileImport" value="Browse" multiple="multiple"/>
             </td>
             <td>
                 <input type="button" style="width:100%" id="printButton" value="Print"/>
